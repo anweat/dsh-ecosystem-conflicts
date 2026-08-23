@@ -1,0 +1,419 @@
+{
+ "sampledRepos": 503,
+ "literalRegistrations": 1087,
+ "unresolvedRegistrations": 652,
+ "distinctPaths": 847,
+ "contended": [
+  {
+   "path": "prefix /sidebar/bundle",
+   "packages": [
+    "dsh-better-sidebar",
+    "deepseek-harness-code",
+    "dsh-plugin-vscode-sidebar",
+    "dizzy-dsh",
+    "dsh-apex-standard",
+    "dsh-desktop"
+   ]
+  },
+  {
+   "path": "prefix /sidebar/api",
+   "packages": [
+    "dsh-better-sidebar",
+    "deepseek-harness-code",
+    "dsh-plugin-vscode-sidebar",
+    "dizzy-dsh",
+    "dsh-apex-standard",
+    "dsh-desktop"
+   ]
+  },
+  {
+   "path": "prefix /sidebar/file",
+   "packages": [
+    "dsh-better-sidebar",
+    "deepseek-harness-code",
+    "dsh-plugin-vscode-sidebar",
+    "dizzy-dsh",
+    "dsh-apex-standard",
+    "dsh-desktop"
+   ]
+  },
+  {
+   "path": "prefix /sidebar/html",
+   "packages": [
+    "dsh-better-sidebar",
+    "deepseek-harness-code",
+    "dsh-plugin-vscode-sidebar",
+    "dizzy-dsh",
+    "dsh-apex-standard",
+    "dsh-desktop"
+   ]
+  },
+  {
+   "path": "? /sidebar/ws/terminal",
+   "packages": [
+    "dsh-better-sidebar",
+    "deepseek-harness-code",
+    "dsh-plugin-vscode-sidebar",
+    "dizzy-dsh",
+    "dsh-apex-standard",
+    "dsh-desktop"
+   ]
+  },
+  {
+   "path": "? /sidebar/ws/agent-terminals",
+   "packages": [
+    "dsh-better-sidebar",
+    "deepseek-harness-code",
+    "dsh-plugin-vscode-sidebar",
+    "dizzy-dsh",
+    "dsh-apex-standard",
+    "dsh-desktop"
+   ]
+  },
+  {
+   "path": "prefix /plugins",
+   "packages": [
+    "deepseek-harness-desktop",
+    "@cocode/gui-root",
+    "@deepseek-ai/dsh-root",
+    "dsh-for-vscode-gt112",
+    "zako-mio/deepseek-harness-plugin-dag"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/backup",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/restore",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/webdav",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/registry",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/installed",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/use-skin",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/status",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/updates",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/update",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/setup-pnpm",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/restart",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/approve-builds",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/cancel",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/uninstall",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/install",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "prefix /super-injector/api",
+   "packages": [
+    "@dsh-external/dsh-super-injector",
+    "deepseek-harness-code",
+    "dsh-plugin-market",
+    "deepseek-harness-wui"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/gist",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/check",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/bundle-order",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/toggle",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/groups",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/logs",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/channel",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/self-uninstall",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /dsh-market/rollback",
+   "packages": [
+    "dshmarket",
+    "@deepseek-ai/dsh-root",
+    "@wsl043/dsh-portable-desktop-bridge"
+   ]
+  },
+  {
+   "path": "exact /sidebar/upload",
+   "packages": [
+    "dsh-better-sidebar",
+    "dizzy-dsh"
+   ]
+  },
+  {
+   "path": "exact /plugins/dsh-agent-teams/state",
+   "packages": [
+    "@nanmicoder/dsh-agent-teams",
+    "@zhujunpeng12/dsh-memory-system"
+   ]
+  },
+  {
+   "path": "prefix /plugins/dsh-agent-teams/assets",
+   "packages": [
+    "@nanmicoder/dsh-agent-teams",
+    "@zhujunpeng12/dsh-memory-system"
+   ]
+  },
+  {
+   "path": "prefix /aionui-panel",
+   "packages": [
+    "dsh-easyssh",
+    "dsh-web-ui"
+   ]
+  },
+  {
+   "path": "exact /aionui-panel/events",
+   "packages": [
+    "dsh-easyssh",
+    "dsh-web-ui"
+   ]
+  },
+  {
+   "path": "prefix /api/upload",
+   "packages": [
+    "dsh-files",
+    "dsh-file-upload"
+   ]
+  },
+  {
+   "path": "exact /query-balance",
+   "packages": [
+    "dsh-balance",
+    "dsh-balance-tide"
+   ]
+  },
+  {
+   "path": "exact /api/image-gen/config",
+   "packages": [
+    "@dsh-external/dsh-webui",
+    "dsh-plugin-market"
+   ]
+  },
+  {
+   "path": "exact /plugins/dsh-restart/restart",
+   "packages": [
+    "dsh-restart",
+    "dsh-apex-standard"
+   ]
+  },
+  {
+   "path": "exact /api/tavily-probe",
+   "packages": [
+    "@dsh-external/dsh-plugin-tavily",
+    "dsh-tavily"
+   ]
+  },
+  {
+   "path": "prefix /api/plugin-market",
+   "packages": [
+    "dsh-plugin-market",
+    "dsh-enhanced-plugins"
+   ]
+  },
+  {
+   "path": "exact /api/opencode-go/balance",
+   "packages": [
+    "dsh-save-balance-monitor",
+    "dsh-opencode-go-monitor"
+   ]
+  },
+  {
+   "path": "exact /api/opencode-go/usage",
+   "packages": [
+    "dsh-save-balance-monitor",
+    "dsh-opencode-go-monitor"
+   ]
+  },
+  {
+   "path": "exact /api/opencode-go/rate",
+   "packages": [
+    "dsh-save-balance-monitor",
+    "dsh-opencode-go-monitor"
+   ]
+  },
+  {
+   "path": "exact /api/opencode-go/config",
+   "packages": [
+    "dsh-save-balance-monitor",
+    "dsh-opencode-go-monitor"
+   ]
+  },
+  {
+   "path": "exact /api/deepseek/balance",
+   "packages": [
+    "dsh-save-balance-monitor",
+    "dsh-opencode-go-monitor"
+   ]
+  },
+  {
+   "path": "exact /api/deepseek/usage",
+   "packages": [
+    "dsh-save-balance-monitor",
+    "dsh-opencode-go-monitor"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,97 @@
+{
+  "generatedAt": "2026-08-23T16:49:36.281Z",
+  "coverage": {
+    "recordsTotal": 12301,
+    "cloneFailed": 22,
+    "analyzeFailed": 0,
+    "inspected": 12279,
+    "realPlugins": 9873,
+    "placeholders": 2406,
+    "withDshField": 8455,
+    "withPatchFile": 7948,
+    "withClientHalf": 4843,
+    "withRegistrations": 8989,
+    "shipsSource": 3475
+  },
+  "conflicts": {
+    "total": 1308,
+    "bySeverity": {
+      "critical": 581,
+      "high": 252,
+      "medium": 471,
+      "low": 4
+    },
+    "byKind": {
+      "tool-name-collision": 553,
+      "tool-name-vs-shipped": 28,
+      "config-row-contention": 77,
+      "orphan-patch": 89,
+      "slot-key-collision": 62,
+      "slot-shadow": 24,
+      "config-key-drop": 19,
+      "entry-id-collision": 452,
+      "slot-key-unproven": 4
+    }
+  },
+  "branchingFactors": [
+    {
+      "hop": "plugin -> entry rows (配置行)",
+      "n": 6476,
+      "total": 7393,
+      "mean": 1.14,
+      "p50": 1,
+      "p90": 1,
+      "p99": 8,
+      "max": 81
+    },
+    {
+      "hop": "plugin -> registrations (效果标签)",
+      "n": 6476,
+      "total": 52572,
+      "mean": 8.12,
+      "p50": 3,
+      "p90": 15,
+      "p99": 88,
+      "max": 1768
+    },
+    {
+      "hop": "entry row <- plugins (争用扇入)",
+      "n": 5372,
+      "total": 7173,
+      "mean": 1.34,
+      "p50": 1,
+      "p90": 1,
+      "p99": 11,
+      "max": 47
+    },
+    {
+      "hop": "contribution target <- plugins (争用扇入)",
+      "n": 9987,
+      "total": 23112,
+      "mean": 2.31,
+      "p50": 1,
+      "p90": 1,
+      "p99": 15,
+      "max": 1166
+    }
+  ],
+  "contributionMix": {
+    "event-listen": 10501,
+    "tool-register": 13874,
+    "webServer-register": 7364,
+    "slot-register": 12916,
+    "settings-register": 1137,
+    "invariants-register": 3403,
+    "service-provide": 402,
+    "skills-register": 320,
+    "sessionProjections-register": 289,
+    "command-register": 2050,
+    "agents-register": 11,
+    "typert-register": 119,
+    "shellEnv-register": 104,
+    "web-register": 71,
+    "sessionTitle-register": 7,
+    "sessions-register": 2,
+    "clientModules-register": 2
+  }
+}

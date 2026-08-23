@@ -1,0 +1,139 @@
+# DSH ecosystem conflict study
+
+A static survey of the DeepSeek Harness plugin ecosystem, the conflicts it currently produces, and reproducible experiments against the harness's own mechanisms.
+
+Everything here is derived from public repositories and from the harness's own source. No plugin source code is redistributed — the pipeline re-derives it from the original repositories.
+
+**中文摘要在文末。**
+
+---
+
+## Headline findings
+
+**9,873 real plugins** identified out of 12,630 harvested repositories (a repository counts as a real plugin when it declares `package.json#dsh`, ships a `cordis.patch.yml`, or contains actual registration calls).
+
+### The structural finding
+
+```
+entry rows inserted at the root:      9,216
+entry rows inserted under a group:        0
+```
+
+Not one third-party plugin mounts under a group. Every one of them registers into the root context.
+
+This matters because the shipped architecture puts model-facing rows on the **agent plane**, not the host plane. Quantitatively: of the 24 rows `packages/bundle/web-app/cordis.patch.yml` disables at the root, **22 are re-mounted inside `apps/cli/config/agent-presets/standard/agent.cordis.yml`** — the two exceptions are `hmr` and `tool-str-replace-editor`, which are genuinely off. `dsh-agent-presets` warns that an agent which joined no preset resolves "against the empty global layer".
+
+So the global layer is meant to be empty, and the entire ecosystem is registering into it.
+
+### Resulting conflicts
+
+| Kind | Groups | Packages | Runtime consequence |
+|---|---:|---:|---|
+| `tool-name-collision` | 553 | 855 | `tools.register` throws → **boot failure** |
+| `entry-id-collision` | 452 | 1042 | later patch layers can only address one of them |
+| `orphan-patch` | 89 | 87 | one stderr warning, then skipped → **silent no-op** |
+| `config-row-contention` | 77 | 381 | a patch replaces the whole `config` → silent field loss |
+| `slot-key-collision` | 62 | 226 | UI entry shadowed |
+| `tool-name-vs-shipped` | 28 | 77 | collides with a shipped tool → **boot failure** |
+| `slot-shadow` | 24 | 303 | `single` seat, only one renders |
+| `config-key-drop` | 19 | 11 | provable subset of contention |
+
+Most contended tool names: `country_info` (84 packages), `element_info` (55), `bash` (44), `memory_search` (37), `generate_image` (29).
+
+Most contended entry ids are **all infrastructure**: `storage` (29), `storage-json` (29), `storage-domain` (29), `agent-presets` (26), `code-runtime` (25) — plugins each re-inserting what the host is supposed to provide.
+
+### What the ecosystem actually modifies
+
+| Surface | Distinct packages | | Interception point | Packages |
+|---|---:|---|---|---:|
+| `slots.register` | 4291 | | `session/event` | 995 |
+| `tools.register` | 3890 | | `agent/pre-step` | 513 |
+| event listeners | 2775 | | `tools/pre-execute` | 349 |
+| `webServer.register` | 2702 | | `llm/stream` | 256 |
+| `settings.register` | 827 | | `system-prompt/assemble` | 218 |
+
+**19.8% (1,951 packages) intervene in the turn or tool pipeline.**
+
+The strongest co-occurrence by a wide margin: **2,622 packages register a UI slot *and* an HTTP route** — everyone is hand-rolling "a panel plus the endpoint that feeds it".
+
+---
+
+## Mechanism experiments
+
+Four scripts in [`experiments/`](experiments/) verify how the harness behaves, against a clone of the harness itself. Each prints PASS/FAIL and exits non-zero on failure.
+
+| Script | Asserts | Result |
+|---|---|---|
+| `lab-isolate-proxy.ts` | a remapped isolate symbol yields a separate service instance; `ctx.root` reaches the real one from inside a realm; a service sees the **calling** context, so one realm-level instance can attribute every call to its caller | 10/10 |
+| `lab-real-registry.ts` | against the real `ToolRuntime`: two plugin scopes may claim one tool name; an agent whose chain includes a plugin scope sees that tool **under its original name**; the nearer scope on a chain shadows the farther one — precedence is the declared chain order, not activation order | 12/12 |
+| `lab-loader-isolate.ts` | end-to-end through the real loader: `cordis:group` + `isolate` places a shim between consumers and the root service, **declared purely in `cordis.yml`** | 6/6 |
+| `lab-event-order.ts` | `prepend: true` wins the front seat; a prepend/last sentinel pair detects a waterfall short-circuit; `tools.guard()` still denies after a listener short-circuits the pre-execute waterfall | 5/5 |
+
+Run them from a harness clone:
+
+```bash
+node --import tsx/esm lab-isolate-proxy.ts
+node --import tsx/esm lab-real-registry.ts
+node --import tsx/esm lab-loader-isolate.ts
+node --import tsx/esm lab-event-order.ts
+```
+
+**What this establishes**: tool-name collisions are resolvable by scope layering without renaming anything the model sees, and the interception layer is declarable from a patch file with no upstream change.
+
+---
+
+## Method
+
+[`pipeline/`](pipeline/) contains the scanner that produced `data/`.
+
+1. **Harvest** — GitHub search with adaptive date slicing (search caps at 1,000 results per query).
+2. **Stream** — shallow-clone, analyze, delete. Peak disk stays at roughly one repo per worker rather than the whole corpus. A free-space floor stops the run cleanly.
+3. **Extract**, two planes:
+   - *Declarative, authoritative*: `package.json#dsh` and `cordis.patch.yml`, replayed through a mirror of the harness's own `applyEntryPatches`, so insert / override / disable classification cannot drift from what actually boots.
+   - *Implementation, heuristic*: registration call sites. Bundlers rename identifiers but never property names, so matching keys on the property-chain suffix (`.slots.register`) and the string literals passed to it — never on a `ctx` variable name.
+4. **Baseline** — the known-component tables are exported from the harness checkout itself (generated slot catalog, service/event catalogs, composed bundle patches), never hand-written.
+5. **Arbitrate** — a conflict is only counted where the runtime actually makes it one: a `single`/`keyed` seat, a registry that throws, or a config row two layers both rewrite. `list`/`chain` seats are additive by construction and are counted, never flagged.
+
+### Limitations, stated plainly
+
+- **63% of route registrations carry a literal path**; the other 37% pass a non-literal and are statically undecidable. Route findings are a **sample of 503 repositories**, not the full corpus.
+- Route contention is dominated by **forks**, not independent collisions: `/sidebar/*` and `/dsh-market/*` are whole route surfaces shared by forks of one plugin, and `/plugins` collisions are mostly full-host wrappers that replace the harness rather than coexist with it.
+- Slot `key` and `priority` are frequently non-literal; those registrations are reported as *undecidable*, never as conflicts.
+- Packages shipping both `src/` and `lib/` were initially double-counted (14.6% of plugins, ~11% of registration points). The pipeline now drops the build plane when sources sit beside it, and the published data is corrected.
+- 22 of 12,630 repositories failed to clone and are simply absent.
+- One package's `dsh` manifest can describe a monorepo root rather than a plugin; those appear in the data as ordinary packages.
+
+Being named in `data/conflicts.json` is not a judgement about a plugin. The dominant cause is structural — the two-plane split is not visible to plugin authors — and most of these packages work fine in isolation.
+
+---
+
+## Data files
+
+| File | Contents |
+|---|---|
+| `data/summary.json` | headline counts, branching factors, contribution mix |
+| `data/conflicts.json` | every conflict group with its severity, target, and named parties |
+| `data/surfaces.json` | slot occupancy, tool namespace, event usage, contended config rows |
+| `data/routes.json` | route sample: distinct paths and their claimants |
+
+The per-repository raw extraction is deliberately not published. The pipeline reproduces it from public sources.
+
+---
+
+## 中文摘要
+
+对 DeepSeek Harness 插件生态的静态调查:从 12,630 个仓库中识别出 **9,873 个真实插件**,并对照 harness 自身源码验证其机制。
+
+**结构性发现**:9,216 个 entry 行插入到根,**插入到分组下的为 0**。而出厂架构把模型可见的行放在 agent 平面——web-app 在根上禁用的 24 行里,22 行在 `standard` 预设中重新挂上。也就是说全局层设计上应为空,而整个生态都注册在里面。
+
+**由此产生**:553 起工具名撞车 + 28 起撞官方工具(均导致启动失败)、452 起 entry id 撞车、89 起孤儿补丁静默失效、77 起配置行争用。撞得最狠的 entry id 全是基础设施(`storage`、`agent-presets`、`code-runtime`)——插件在各自重新插入宿主本该提供的东西。
+
+**机制实验**(`experiments/`,共 33 项断言全部通过)证明:工具名冲突可以靠 scope 分层解决而**无需改动模型可见的名字**,且拦截层可以**纯从补丁文件声明**,不需要上游改动。
+
+局限已在上文 Limitations 一节列明:路由数据是 503 个仓库的抽样且 37% 静态不可判定;路由争用以分叉为主而非独立撞车。**被列入 `data/conflicts.json` 不代表对该插件的评判**——主因是结构性的,大多数插件单独使用都正常。
+
+---
+
+## License
+
+MIT. The pipeline and experiments are original work; the data is derived from public repositories and from the MIT-licensed DeepSeek Harness source.
