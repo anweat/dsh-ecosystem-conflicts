@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-08-23T17:07:12.027Z",
+  "corpus": {
+    "records": 9617,
+    "distinctOwners": 8540,
+    "contributions": 52301
+  },
+  "today": {
+    "fatalCells": 581,
+    "affectedPackages": 896
+  },
+  "afterArbitration": {
+    "intact": 6614,
+    "adapted": 1123,
+    "degraded": 803,
+    "contested": 1201,
+    "byRemedy": {
+      "layer": 581,
+      "rename": 453,
+      "drop-client": 90,
+      "report-only": 77
+    },
+    "byKind": {
+      "tool": 581,
+      "entry-id": 453,
+      "slot-keyed": 66,
+      "config-row": 77,
+      "slot-single": 24
+    }
+  },
+  "pairwise": {
+    "sampled": 4000,
+    "coexist": 3941,
+    "stillDegraded": 59
+  }
+}

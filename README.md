@@ -82,6 +82,40 @@ node --import tsx/esm lab-event-order.ts
 
 ---
 
+## Arbitration replay
+
+[`arbitration/`](arbitration/) is a pure function — no harness API, no filesystem — from contributions plus a precedence policy to decisions. It exists so the claim "these conflicts are resolvable" can be checked rather than asserted, by replaying it over the whole corpus.
+
+```bash
+node arbitration/arbitrate.spec.mjs    # 34 unit assertions
+node arbitration/baseline.mjs          # replay over the corpus
+```
+
+The remedies are not interchangeable — each is the response the runtime actually permits for that kind. `layer` (scope layering, everyone keeps the name, precedence is the declared chain order) applies to tools; `rename` to entry ids, where nothing addresses them by name from outside; `isolate` to routes, which have no scope model; `drop-client` to client-plane slots, because the browser half has no configuration seam at all.
+
+### Result over 9,617 scanned records (8,540 distinct package names, 52,301 contributions)
+
+**Today, with everything installed:** 581 cells would make a registry throw, involving **896 packages (10.5%)**. One is enough to fail the whole boot.
+
+**After arbitration:**
+
+| Outcome | Packages | Share | Meaning |
+|---|---:|---:|---|
+| `intact` | 6,614 | 77.4% | every contribution keeps its declared target |
+| `adapted` | 1,123 | 13.1% | something was layered, renamed, or isolated; function is complete |
+| `degraded` | 803 | 9.4% | browser half withheld |
+| **coexisting** | **7,737** | **90.6%** | |
+
+Remedy distribution: `layer` 581, `rename` 453, `drop-client` 90, `report-only` 77.
+
+**Pairwise — the number a user feels.** Nobody installs 9,617 plugins, but installing two that collide happens daily. Of 4,000 sampled pairs that are mutually fatal today, **3,941 (98.5%) coexist after arbitration**; 59 (1.5%) still lose frontend function.
+
+All 581 tool-name conflicts resolve to `layer` — **not one requires changing a name the model sees**. Every remaining functional loss is on the client plane, which is exactly the gap [`BootPluginRow` priority](#three-things-the-config-layer-cannot-reach) would close.
+
+Raw output: [`data/arbitration-baseline.json`](data/arbitration-baseline.json).
+
+---
+
 ## Method
 
 [`pipeline/`](pipeline/) contains the scanner that produced `data/`.
