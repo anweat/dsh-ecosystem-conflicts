@@ -74,6 +74,11 @@ export function contributionsOf(record, slotKinds = new Map()) {
       out.push({ plane: 'host', kind: 'route', target: c.target, owner, source: c.source ?? null })
     } else if (c.verb === 'event-listen') {
       out.push({ plane: 'host', kind: 'event', target: c.target, owner, source: c.source ?? null })
+    } else if (c.verb === 'service-provide') {
+      // Which services a package provides decides whether its row needs an
+      // isolate realm: a service row outside one publishes into the root realm,
+      // where a second preset providing the same name collides.
+      out.push({ plane: 'host', kind: 'service', target: c.target, owner, source: c.source ?? null })
     } else if (c.verb === 'slot-register') {
       const arity = slotKinds.get(c.target)
       if (arity === undefined) {

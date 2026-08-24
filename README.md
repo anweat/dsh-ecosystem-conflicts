@@ -90,6 +90,8 @@ node --import tsx/esm lab-event-order.ts
 node arbitration/arbitrate.spec.mjs     # 34 assertions — normalization and decisions
 node arbitration/emit-patch.spec.mjs    # 26 assertions — patch rows, replayed through a mirror of applyEntryPatches
 node arbitration/scope-chain.spec.mjs   # 24 assertions — scope ordering and cycle detection
+node arbitration/realm-proxy.spec.mjs   # 17 assertions — route rewriting for a registry with no scope model
+node arbitration/emit-preset.spec.mjs   # 24 assertions — agent-plane composition and its one-scope constraint
 node arbitration/baseline.mjs           # replay over the corpus
 ```
 
@@ -113,6 +115,10 @@ Remedy distribution: `layer` 581, `rename` 453, `drop-client` 90, `report-only` 
 **Pairwise — the number a user feels.** Nobody installs 9,617 plugins, but installing two that collide happens daily. Of 4,000 sampled pairs that are mutually fatal today, **3,941 (98.5%) coexist after arbitration**; 59 (1.5%) still lose frontend function.
 
 All 581 tool-name conflicts resolve to `layer` — **not one requires changing a name the model sees**. Every remaining functional loss is on the client plane, which is exactly the gap [`BootPluginRow` priority](#three-things-the-config-layer-cannot-reach) would close.
+
+### One preset is one scope
+
+A preset is mounted once under a single standing scope and an agent binds to that one key, so every row in a preset shares one registration layer. Two plugins contending for a name therefore cannot both live in one preset — they collide exactly as they do at the root. The preset emitter composes a conflict-free set and reports what it excluded, rather than emitting a composition that fails to mount. Layering contenders is the scope-chain path, not the preset path.
 
 ### One linear scope chain is enough
 
