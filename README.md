@@ -74,6 +74,7 @@ Ten scripts in [`experiments/`](experiments/) verify how the harness behaves, ag
 | `lab-gatekeeper-plugin.ts` | the gatekeeper in a real boot: veto refuses and names the contenders, report warns without repairing, a clean composition is undisturbed | 13/13 |
 | `lab-preset-host.ts` | repair rather than refusal: `standingKeyFor` composes a preset without binding the agent, so the substrate builds the plugin chain above it and performs the binding itself. The agent resolves the arbitrated winner over the preset's own tool | 18/18 |
 | `lab-scale.ts` | the whole corpus against the real registry: 896 scopes on one chain, 7,164 tool registrations, zero throws | 18/18 |
+| `lab-client-priority.ts` | a working prototype of `BootPluginRow.priority` (patch included): a contended client seat becomes an ordinary shadow instead of an all-or-nothing plugin disable, an explicit priority still wins, and an un-seeded composition behaves exactly as before | 12/12 |
 
 Run them from a harness clone:
 
@@ -88,6 +89,7 @@ node --import tsx/esm lab-gate-ordering.ts
 node --import tsx/esm lab-gatekeeper-plugin.ts
 node --import tsx/esm lab-preset-host.ts
 node --import tsx/esm lab-scale.ts
+node --import tsx/esm lab-client-priority.ts   # apply experiments/bootpluginrow-priority.patch first
 ```
 
 **What this establishes**: tool-name collisions are resolvable by scope layering without renaming anything the model sees; the interception layer is declarable from a patch file with no upstream change; and a substrate can intervene in two distinct ways — refusing a composition before it fails (the gatekeeper), or repairing it at agent setup (the preset host).
@@ -167,6 +169,23 @@ contended tools 553 | resolved to a non-winner 0 | missing 0
 Every one of those 553 contended tools resolves to the arbitrated winner, under its original name, with the global layer left empty.
 
 **Scale found a conflict class that reading the source did not.** One package registers a tool named `run_code`, which the registry refuses unconditionally — "reserved for the Code Mode presentation transport and cannot be registered or shadowed". Scope layering, the remedy for every other tool-name conflict, does not apply: reserved is not "taken in this layer", it is refused everywhere. Arbitration now models it as its own outcome (`drop`, winner `<reserved>`), because the honest answer is that nobody gets the name.
+
+### What the one upstream request is worth
+
+Request 3 below — `BootPluginRow` carrying a priority — is the only one of the three with a measured payoff, and [`experiments/bootpluginrow-priority.patch`](experiments/bootpluginrow-priority.patch) is a working 37-line prototype of it (two files: the manifest row, and the default the slot service applies when a registration sets none).
+
+Re-running the same arbitration with client seats shadowing instead of withholding ([`arbitration/whatif-client-priority.mjs`](arbitration/whatif-client-priority.mjs)):
+
+```
+                              intact   adapted   degraded
+  today (no manifest rank)      6,618     1,122        804
+  with BootPluginRow.priority   6,618     1,925          1
+
+  degraded  804 → 1   (803 packages, 9.4% of the corpus)
+  coexisting  90.6% → 100.0%
+```
+
+The single remaining degraded package is the reserved-name case, which no ranking can fix. Everything else the client plane costs today is this one missing field.
 
 Raw output: [`data/arbitration-baseline.json`](data/arbitration-baseline.json).
 
