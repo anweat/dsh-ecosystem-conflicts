@@ -75,6 +75,22 @@ console.log('\n=== 同一包多次认领不是争用 ===')
   check('一个包认领两次 = 组合,不是冲突', r.totals.contested === 0, JSON.stringify(r.totals))
 }
 
+console.log('\n=== 保留名:没有任何补救 ===')
+{
+  const r = arbitrate([c('tool', 'run_code', 'pkg-a')])
+  const d = r.decisions[0]
+  check('单个包认领保留名即判冲突', d?.contested === true && d?.reserved === true, JSON.stringify(d))
+  check('补救是 drop,不是 layer', d?.remedy === 'drop', d?.remedy)
+  check('赢家是 <reserved>,谁都拿不到', d?.winner === '<reserved>', d?.winner)
+  check('动作注明了原因', d?.actions[0].why === 'reserved-name', JSON.stringify(d?.actions))
+  check('该包被记为 degraded',
+    r.outcomes.find(o => o.owner === 'pkg-a')?.status === 'degraded', JSON.stringify(r.outcomes))
+  const two = arbitrate([c('tool', 'run_code', 'a'), c('tool', 'run_code', 'b')])
+  check('多个认领者全部被 drop', two.decisions[0].actions.length === 2, JSON.stringify(two.decisions[0].actions))
+  const custom = arbitrate([c('tool', 'mine', 'a')], { reservedToolNames: ['mine'] })
+  check('保留名清单可由策略覆盖', custom.decisions[0]?.remedy === 'drop', JSON.stringify(custom.decisions))
+}
+
 console.log('\n=== 撞官方 ===')
 {
   const r = arbitrate([c('tool', 'bash', 'pkg-a')], { shippedTools: new Set(['bash']) })

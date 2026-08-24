@@ -60,7 +60,7 @@ The strongest co-occurrence by a wide margin: **2,622 packages register a UI slo
 
 ## Mechanism experiments
 
-Four scripts in [`experiments/`](experiments/) verify how the harness behaves, against a clone of the harness itself. Each prints PASS/FAIL and exits non-zero on failure.
+Ten scripts in [`experiments/`](experiments/) verify how the harness behaves, against a clone of the harness itself. Each prints PASS/FAIL and exits non-zero on failure.
 
 | Script | Asserts | Result |
 |---|---|---|
@@ -69,6 +69,11 @@ Four scripts in [`experiments/`](experiments/) verify how the harness behaves, a
 | `lab-loader-isolate.ts` | end-to-end through the real loader: `cordis:group` + `isolate` places a shim between consumers and the root service, **declared purely in `cordis.yml`** | 6/6 |
 | `lab-event-order.ts` | `prepend: true` wins the front seat; a prepend/last sentinel pair detects a waterfall short-circuit; `tools.guard()` still denies after a listener short-circuits the pre-execute waterfall | 5/5 |
 | `lab-substrate-e2e.ts` | the whole chain against the real `ToolRuntime`: arbitrate → plan the scope chain → mount along it. Two packages that collide today both register, the tool name is unchanged, the agent resolves the arbitrated winner, and the loser's other tools stay visible | 18/18 |
+| `lab-gatekeeper-timing.ts` | *when* a conflict happens: at loader apply, before any agent exists — so an `agent/created` veto never gets its turn. The entry list, however, is complete before those fibers apply, and the conflict is predictable from it | 9/9 |
+| `lab-gate-ordering.ts` | whether a gatekeeper can be *guaranteed* to run first. File position guarantees nothing; `inject` is an entry option, so a patch layer can make third-party rows depend on the substrate and the dependency graph enforces the order | 7/7 |
+| `lab-gatekeeper-plugin.ts` | the gatekeeper in a real boot: veto refuses and names the contenders, report warns without repairing, a clean composition is undisturbed | 13/13 |
+| `lab-preset-host.ts` | repair rather than refusal: `standingKeyFor` composes a preset without binding the agent, so the substrate builds the plugin chain above it and performs the binding itself. The agent resolves the arbitrated winner over the preset's own tool | 18/18 |
+| `lab-scale.ts` | the whole corpus against the real registry: 896 scopes on one chain, 7,164 tool registrations, zero throws | 18/18 |
 
 Run them from a harness clone:
 
@@ -78,9 +83,19 @@ node --import tsx/esm lab-real-registry.ts
 node --import tsx/esm lab-loader-isolate.ts
 node --import tsx/esm lab-event-order.ts
 node --import tsx/esm lab-substrate-e2e.ts
+node --import tsx/esm lab-gatekeeper-timing.ts
+node --import tsx/esm lab-gate-ordering.ts
+node --import tsx/esm lab-gatekeeper-plugin.ts
+node --import tsx/esm lab-preset-host.ts
+node --import tsx/esm lab-scale.ts
 ```
 
-**What this establishes**: tool-name collisions are resolvable by scope layering without renaming anything the model sees, and the interception layer is declarable from a patch file with no upstream change.
+**What this establishes**: tool-name collisions are resolvable by scope layering without renaming anything the model sees; the interception layer is declarable from a patch file with no upstream change; and a substrate can intervene in two distinct ways — refusing a composition before it fails (the gatekeeper), or repairing it at agent setup (the preset host).
+
+Two findings here corrected earlier assumptions of ours, and are worth stating because they constrain any design in this space:
+
+- **An `agent/created` veto is too late.** The registrations that fail a boot happen at loader apply, before any agent exists. A gatekeeper has to read the entry list, which is complete before those fibers run.
+- **A preset is one scope.** `mount()` binds an agent to a single standing key, so two plugins contending for a name cannot both live in one preset — they collide exactly as they do at the root. Layering them requires a scope per plugin, built above the standing mount via `standingKeyFor`.
 
 ---
 
@@ -89,11 +104,12 @@ node --import tsx/esm lab-substrate-e2e.ts
 [`arbitration/`](arbitration/) is a pure function — no harness API, no filesystem — from contributions plus a precedence policy to decisions. It exists so the claim "these conflicts are resolvable" can be checked rather than asserted, by replaying it over the whole corpus.
 
 ```bash
-node arbitration/arbitrate.spec.mjs     # 34 assertions — normalization and decisions
+node arbitration/arbitrate.spec.mjs     # 41 assertions — normalization, decisions, reserved names
 node arbitration/emit-patch.spec.mjs    # 26 assertions — patch rows, replayed through a mirror of applyEntryPatches
 node arbitration/scope-chain.spec.mjs   # 24 assertions — scope ordering and cycle detection
 node arbitration/realm-proxy.spec.mjs   # 17 assertions — route rewriting for a registry with no scope model
 node arbitration/emit-preset.spec.mjs   # 24 assertions — agent-plane composition and its one-scope constraint
+node arbitration/predict.spec.mjs       # 26 assertions — predicting conflicts from the entry list alone
 node arbitration/baseline.mjs           # replay over the corpus
 ```
 
@@ -136,6 +152,21 @@ packages on a cycle 0
 ```
 
 Which follows: an ordering constraint only arises when two scopes claim the *same* name, and a cycle needs two packages to beat each other on two different names. The planner still detects cycles and reports which constraints it had to sacrifice rather than emitting an order that looks correct — that path is covered by assertions, just not exercised by this ecosystem.
+
+### At full scale, against the real registry
+
+Replaying decisions offline shows they are consistent; it does not show they work. [`experiments/lab-scale.ts`](experiments/lab-scale.ts) takes the same corpus, mints **896 real scopes** on one chain with the real `dsh-scope`, and performs **7,164 tool registrations** against the real `ToolRuntime`:
+
+```
+arbitration    71 ms      chain planning   48 ms
+minting 896 scopes  114 ms      7,164 registrations  1,188 ms
+registration throws  0          agent-visible tools  5,589   duplicate names  0
+contended tools 553 | resolved to a non-winner 0 | missing 0
+```
+
+Every one of those 553 contended tools resolves to the arbitrated winner, under its original name, with the global layer left empty.
+
+**Scale found a conflict class that reading the source did not.** One package registers a tool named `run_code`, which the registry refuses unconditionally — "reserved for the Code Mode presentation transport and cannot be registered or shadowed". Scope layering, the remedy for every other tool-name conflict, does not apply: reserved is not "taken in this layer", it is refused everywhere. Arbitration now models it as its own outcome (`drop`, winner `<reserved>`), because the honest answer is that nobody gets the name.
 
 Raw output: [`data/arbitration-baseline.json`](data/arbitration-baseline.json).
 

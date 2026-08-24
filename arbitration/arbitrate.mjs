@@ -25,6 +25,18 @@
 
 import { KIND_ARITY, byCell, parseCell } from './model.mjs'
 
+/**
+ * Names no layer may take, however few claimants there are.
+ *
+ * `run_code` is the Code Mode presentation transport: the tool registry rejects
+ * it unconditionally and says it "cannot be registered or shadowed", so scope
+ * layering — the remedy for every other tool-name conflict — does not apply.
+ * A reserved claim has no repair; the only honest outcome is to drop it and
+ * say so. Found by registering the whole corpus against the real registry, not
+ * by reading the source.
+ */
+export const RESERVED_TOOL_NAMES = Object.freeze(['run_code'])
+
 /** How each kind is remedied when more than one package claims one cell. */
 export const DEFAULT_REMEDIES = Object.freeze({
   tool: 'layer',
@@ -78,10 +90,25 @@ export function arbitrate(contributions, policy = {}) {
   const owners = new Set(contributions.map(c => c.owner))
   const rankOf = ranker(policy, owners)
 
+  const reserved = new Set(policy.reservedToolNames ?? RESERVED_TOOL_NAMES)
   const decisions = []
   for (const [cell, claims] of byCell(contributions)) {
     const { kind, target, entryKey } = parseCell(cell)
     const distinct = [...new Set(claims.map(c => c.owner))]
+
+    // A reserved name is refused by the registry outright, so no layering,
+    // renaming, or isolation makes the claim work. One claimant is already a
+    // failure, and every claimant loses.
+    if (kind === 'tool' && reserved.has(target)) {
+      decisions.push({
+        cell, kind, target, entryKey, contested: true, vsShipped: false, reserved: true,
+        remedy: 'drop', winner: '<reserved>', contenders: distinct,
+        actions: distinct.map(owner => ({ owner, action: 'drop', target, why: 'reserved-name' })),
+        severity: 'critical',
+      })
+      continue
+    }
+
     const vsShipped = (kind === 'tool' && shippedTools.has(target))
       || (kind === 'route' && shippedRoutes.has(target))
 
@@ -153,7 +180,9 @@ function outcomesOf(contributions, decisions) {
     for (const a of d.actions ?? []) {
       const rec = byOwner.get(a.owner)
       if (rec === undefined) continue
-      if (a.action === 'drop-client') rec.dropped.push({ kind: d.kind, target: d.target })
+      if (a.action === 'drop-client' || a.action === 'drop') {
+        rec.dropped.push({ kind: d.kind, target: d.target, ...(a.why === undefined ? {} : { why: a.why }) })
+      }
       else if (a.action !== 'report-only') rec.adapted.push({ kind: d.kind, target: d.target, action: a.action })
     }
   }
