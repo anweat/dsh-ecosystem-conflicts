@@ -68,6 +68,7 @@ Four scripts in [`experiments/`](experiments/) verify how the harness behaves, a
 | `lab-real-registry.ts` | against the real `ToolRuntime`: two plugin scopes may claim one tool name; an agent whose chain includes a plugin scope sees that tool **under its original name**; the nearer scope on a chain shadows the farther one — precedence is the declared chain order, not activation order | 12/12 |
 | `lab-loader-isolate.ts` | end-to-end through the real loader: `cordis:group` + `isolate` places a shim between consumers and the root service, **declared purely in `cordis.yml`** | 6/6 |
 | `lab-event-order.ts` | `prepend: true` wins the front seat; a prepend/last sentinel pair detects a waterfall short-circuit; `tools.guard()` still denies after a listener short-circuits the pre-execute waterfall | 5/5 |
+| `lab-substrate-e2e.ts` | the whole chain against the real `ToolRuntime`: arbitrate → plan the scope chain → mount along it. Two packages that collide today both register, the tool name is unchanged, the agent resolves the arbitrated winner, and the loser's other tools stay visible | 18/18 |
 
 Run them from a harness clone:
 
@@ -76,6 +77,7 @@ node --import tsx/esm lab-isolate-proxy.ts
 node --import tsx/esm lab-real-registry.ts
 node --import tsx/esm lab-loader-isolate.ts
 node --import tsx/esm lab-event-order.ts
+node --import tsx/esm lab-substrate-e2e.ts
 ```
 
 **What this establishes**: tool-name collisions are resolvable by scope layering without renaming anything the model sees, and the interception layer is declarable from a patch file with no upstream change.
