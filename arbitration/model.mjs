@@ -94,7 +94,17 @@ export function contributionsOf(record, slotKinds = new Map()) {
   for (const j of record.patchJournal ?? []) {
     if (j.target === null || j.target === undefined) continue
     if (j.action === 'insert') {
-      out.push({ plane: 'host', kind: 'entry-id', target: j.target, owner, source: j.layer ?? null })
+      // `module` rides along because re-homing a row means re-inserting it,
+      // and an insert without the plugin specifier is not a row.
+      out.push({
+        plane: 'host',
+        kind: 'entry-id',
+        target: j.target,
+        owner,
+        source: j.layer ?? null,
+        module: j.plugin ?? null,
+        into: j.into ?? '<root>',
+      })
     } else if (j.action === 'override' || j.action === 'disable') {
       out.push({
         plane: 'host',

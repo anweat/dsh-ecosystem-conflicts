@@ -87,8 +87,10 @@ node --import tsx/esm lab-event-order.ts
 [`arbitration/`](arbitration/) is a pure function — no harness API, no filesystem — from contributions plus a precedence policy to decisions. It exists so the claim "these conflicts are resolvable" can be checked rather than asserted, by replaying it over the whole corpus.
 
 ```bash
-node arbitration/arbitrate.spec.mjs    # 34 unit assertions
-node arbitration/baseline.mjs          # replay over the corpus
+node arbitration/arbitrate.spec.mjs     # 34 assertions — normalization and decisions
+node arbitration/emit-patch.spec.mjs    # 26 assertions — patch rows, replayed through a mirror of applyEntryPatches
+node arbitration/scope-chain.spec.mjs   # 24 assertions — scope ordering and cycle detection
+node arbitration/baseline.mjs           # replay over the corpus
 ```
 
 The remedies are not interchangeable — each is the response the runtime actually permits for that kind. `layer` (scope layering, everyone keeps the name, precedence is the declared chain order) applies to tools; `rename` to entry ids, where nothing addresses them by name from outside; `isolate` to routes, which have no scope model; `drop-client` to client-plane slots, because the browser half has no configuration seam at all.
@@ -111,6 +113,21 @@ Remedy distribution: `layer` 581, `rename` 453, `drop-client` 90, `report-only` 
 **Pairwise — the number a user feels.** Nobody installs 9,617 plugins, but installing two that collide happens daily. Of 4,000 sampled pairs that are mutually fatal today, **3,941 (98.5%) coexist after arbitration**; 59 (1.5%) still lose frontend function.
 
 All 581 tool-name conflicts resolve to `layer` — **not one requires changing a name the model sees**. Every remaining functional loss is on the client plane, which is exactly the gap [`BootPluginRow` priority](#three-things-the-config-layer-cannot-reach) would close.
+
+### One linear scope chain is enough
+
+`dsh-scope` binds each key to at most one parent and `scopeChainOf` returns a line, so every layered decision has to be satisfiable by a single ancestor order. Two decisions can disagree — A ahead of B for one tool, B ahead of A for another — and then no linear chain satisfies both.
+
+Over the corpus that never happens:
+
+```
+chain length 896 | ordering constraints 1,492
+satisfiable    1,492 (100.0%)
+unsatisfiable      0
+packages on a cycle 0
+```
+
+Which follows: an ordering constraint only arises when two scopes claim the *same* name, and a cycle needs two packages to beat each other on two different names. The planner still detects cycles and reports which constraints it had to sacrifice rather than emitting an order that looks correct — that path is covered by assertions, just not exercised by this ecosystem.
 
 Raw output: [`data/arbitration-baseline.json`](data/arbitration-baseline.json).
 

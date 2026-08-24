@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { arbitrate } from './arbitrate.mjs'
 import { contributionsOf, KIND_ARITY, byCell, parseCell } from './model.mjs'
+import { planScopeChain } from './scope-chain.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const ECO = 'C:/Users/anwea/AppData/Local/Temp/claude/D--codeproject-deepseek-harness/c0486343-b5ab-4649-be46-d2fda0485d0a/scratchpad/dsh-eco'
@@ -104,6 +105,22 @@ for (const [k, v] of Object.entries(result.totals.byKind).sort((a, b) => b[1] - 
   console.log(`  ${String(v).padStart(5)}  ${k}`)
 }
 
+// --- scope chain: can ONE linear order satisfy every layer decision? -------
+// The chain is a line and a scope binds to at most one parent, so decisions
+// that disagree about precedence cannot all hold. This measures how often the
+// ecosystem actually produces such a disagreement.
+const plan = planScopeChain(result.decisions, {})
+console.log(`
+=== scope 链(layer 裁决压成一条线)===`)
+console.log(`  链长 ${plan.chain.length} | 顺序约束 ${plan.constraints}`)
+console.log(`  可满足 ${plan.satisfied} (${(plan.satisfied / Math.max(1, plan.constraints) * 100).toFixed(1)}%)`)
+console.log(`  线性链无法同时满足 ${plan.violated.length}`)
+console.log(`  处于环上的包 ${plan.cyclicOwners.length}`)
+if (plan.violated.length > 0) {
+  console.log('  被牺牲的约束(前 5):')
+  for (const v of plan.violated.slice(0, 5)) console.log(`    ${v.winner} 本应遮蔽 ${v.loser}  @ ${parseCell(v.cell).target}`)
+}
+
 // --- pairwise: the number a user feels -------------------------------------
 process.stderr.write('pairwise…\n')
 const pairs = new Set()
@@ -134,5 +151,6 @@ writeFileSync(join(here, '../out-baseline.json'), JSON.stringify({
   today: { fatalCells: fatalCells.length, affectedPackages: fatalOwners.size },
   afterArbitration: { ...status, contested: result.totals.contested, byRemedy: result.totals.byRemedy, byKind: result.totals.byKind },
   pairwise: { sampled: pairs.size, coexist, stillDegraded },
+  scopeChain: { length: plan.chain.length, constraints: plan.constraints, satisfied: plan.satisfied, violated: plan.violated.length, cyclicOwners: plan.cyclicOwners.length },
 }, null, 2))
 console.log('\n-> out-baseline.json')
