@@ -321,6 +321,32 @@ That is where a fourth upstream request sits, structurally like the `BootPluginR
 
 ---
 
+## The whole thing, booted
+
+Every layer above was verified on its own and nothing had booted whole. [`experiments/e2e/`](experiments/e2e/) closes that: it writes one plugin module per corpus package registering that package's real tool names, composes them onto the shipped `examples/headless-agent/cordis.yml` profile, and boots that composition twice.
+
+```
+2,768 packages · 11,911 tool registrations · 536 contended names
+
+  without the substrate   654 registration failures, boot fails
+  with the substrate      boots · 4,090 entries · 5,806 global tools
+                          0 duplicate names · 648 scopes · 5,143 scope-only tools
+```
+
+A successful boot is not the claim on its own — an empty registry boots too. The run reads every scope the substrate minted and counts the tools reachable only through it, so "no collision" cannot be satisfied by having quietly dropped the registrations.
+
+The plugin bodies are synthetic; everything else is real — the profile, the loader, the `ToolRuntime`, the `isolate` interception, the scopes, and every tool name. A plugin's business logic cannot make a registry throw; its registration set can, and that is what the corpus records. So this exercises no more contention than the published data claims, and a pass means *the composition mounts*, never *these plugins work*.
+
+### What the join needed that no layer had
+
+Two pieces existed only as separate proofs: a loader `isolate` entry puts a different service in front of a subtree with no upstream change, and the real `ToolRuntime` lets two scopes claim one name. Nothing connected them, because a plugin mounted from a config row registers at boot, straight into the root registry, long before any agent exists.
+
+[`arbitration/tools-shim.mjs`](arbitration/tools-shim.mjs) is that connection: mounted inside a `cordis:group` carrying `isolate: { tools: true }`, it provides the `tools` every row in that group resolves and forwards each registration into a per-owner scope. One group per contender, never one shared sandbox — two scopes may claim one name, two plugins in the *same* scope may not.
+
+Trying to boot it also surfaced a hole in the remedy itself. The shim minted scopes that nothing could name, and a scope nothing can bind holds tools no agent will ever see — `layer` would have quietly deleted the capability it claims to preserve. The scopes are now published in a ledger on the root context.
+
+---
+
 ## Method
 
 [`pipeline/`](pipeline/) contains the scanner that produced `data/`.
