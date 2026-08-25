@@ -240,6 +240,47 @@ Tests: [`arbitration/tokens.spec.mjs`](arbitration/tokens.spec.mjs), 49 assertio
 
 ---
 
+## The panel scaffold
+
+A panel — a slot entry plus the backend feeding it — is the ecosystem's most repeated shape: **2,155 packages register both**. They write the path three times, in three places, with nothing checking the three agree.
+
+Two runtime facts shape [`arbitration/panel.mjs`](arbitration/panel.mjs), and both were measured rather than assumed.
+
+**No backend seam is additive.** `webServer.register` throws on a duplicate path, `connection.rpc.handle` becomes a prefix route and throws the same way, and `intercept('/api')` holds one interceptor for the whole process. A path is therefore not a name a plugin may pick freely.
+
+**Identity comes from the calling fiber.** `SlotRegistry` stamps `registrant` from `this.ctx.fiber.name`; `connection.rpc` captures `owner = this.ctx`. A scaffold that registered on a plugin's behalf from its own fiber would stamp the whole ecosystem with its own name and leave arbitration unable to tell two plugins apart. Verified against the real registry:
+
+```
+mountPanelClient(pluginCtx,   …)   registrant = plugin-a        <- identity kept
+mountPanelClient(scaffoldCtx, …)   registrant = the-scaffold    <- the wrapping failure
+```
+
+So the scaffold is a function a plugin calls with its own `ctx`. It emits registrations; it never wraps them.
+
+### Deriving the channel
+
+`channelFor('@scope/thing', 'main')` yields `/scope-thing.main`. The two halves join with `.` rather than nesting because the connection's grammar is `^\/[A-Za-z0-9._~-]+$` — exactly one segment. Slugging maps every separator to `-`, so `.` cannot occur inside either half and one `(pkg, panel)` pair yields one channel.
+
+Measured over the route sample ([`arbitration/whatif-panel-channels.mjs`](arbitration/whatif-panel-channels.mjs)):
+
+```
+503 repositories · 845 distinct literal paths
+
+  contended paths        49    involving 32 packages
+  separable by deriving  49    100.0%
+  still colliding         0    two copies of one package, which must collide
+```
+
+The contended paths are shared-ancestry forks — `/sidebar/*` is claimed by four packages, `/dsh-market/*` by four more — but the forks renamed their packages, so deriving from the package name does separate them. Today installing two of them is a boot failure; derived, both work, each serving its own copy. Four of the 49 are `/plugins`, claimed by host wrappers that replace the harness rather than coexist with it; a plugin-side convention was never going to reach those.
+
+### What it does not do
+
+The scaffold does not hide a real conflict. One package mounting the same panel twice still throws, and a handler map that disagrees with the declared endpoints fails at mount rather than at first request.
+
+Tests: [`arbitration/panel.spec.mjs`](arbitration/panel.spec.mjs) (44 assertions) and [`experiments/lab-panel.ts`](experiments/lab-panel.ts) (11, against the real `SlotRegistry`, `WebServer`, and connection — including a real HTTP round trip and channel removal on plugin disposal).
+
+---
+
 ## Method
 
 [`pipeline/`](pipeline/) contains the scanner that produced `data/`.
