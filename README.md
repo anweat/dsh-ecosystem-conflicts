@@ -191,6 +191,55 @@ Raw output: [`data/arbitration-baseline.json`](data/arbitration-baseline.json).
 
 ---
 
+## The design tokens are ambient but unpublished
+
+The shell defines its design tokens on `body` and redefines them under `body[data-ds-dark-theme]`, so every plugin's CSS inherits the whole vocabulary for free. `ui-primitives` and `ui-slots` are platform seed words alongside `react`, shared as single instances. The design system is real and already at platform level.
+
+What it has no export surface for is the vocabulary itself. Nothing tells a plugin author which token names exist, which of them a theme redefines, or which references have gone stale. [`arbitration/tokens.mjs`](arbitration/tokens.mjs) turns the ambient definitions into a checkable contract.
+
+```
+350 tokens over 7 tiers
+  alias      78    66 redefined under the dark theme
+  static     73     1
+  specific   11    10
+  font      181     0   (markdown typography)
+```
+
+The tier split is what a plugin author needs and cannot currently discover: `alias` names a role and flips between themes, `static` names a fixed palette entry and does not.
+
+### Three rules, one of them a proven defect
+
+| rule | severity | what it means |
+|---|---|---|
+| `dangling` | **error** | the token is defined nowhere and the reference has no fallback |
+| `static-on-themed` | advisory | a fixed palette entry on a property the theme should drive |
+| `pinned-literal` | advisory | an opaque colour written where a token belongs |
+
+Only `dangling` is self-evidently wrong: the declaration is invalid at computed-value time and resolves to nothing. The other two have legitimate exceptions — a brand accent is deliberately identical in both themes, and a surface that stays dark in both (`--dsw-alias-tooltip-bg` is `neutral-bluish-850` light and `-750` dark) correctly carries light text as a literal. Flagging those as errors is how a lint gets discarded by its first user, so they advise and never decide an exit status.
+
+### First run against the shipped client
+
+**10 defects and 13 advisories** over `packages/client`. The heaviest: `--dsw-alias-label-error` is defined nowhere in the repository, and is used bare by `ui-settings-plugins` in `fields.module.css:98,105` and `PluginCard.module.css:116`.
+
+Measured in a browser against those exact rules:
+
+```
+error text   today          rgb(26, 26, 26)     <- body black
+error text   if defined     rgb(220, 38, 38)    <- the intended red
+input border today          rgb(0, 0, 0)        <- currentColor
+```
+
+**Validation errors in the plugin settings panel do not render red today.** That is one of ten, found on the contract's first run.
+
+```bash
+node arbitration/tokens-cli.mjs emit <dsh-root> [out.d.ts]
+node arbitration/tokens-cli.mjs lint <dsh-root> [scan-root]
+```
+
+Tests: [`arbitration/tokens.spec.mjs`](arbitration/tokens.spec.mjs), 49 assertions.
+
+---
+
 ## Method
 
 [`pipeline/`](pipeline/) contains the scanner that produced `data/`.
