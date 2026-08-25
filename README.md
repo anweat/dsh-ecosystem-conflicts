@@ -281,6 +281,46 @@ Tests: [`arbitration/panel.spec.mjs`](arbitration/panel.spec.mjs) (44 assertions
 
 ---
 
+## What one substrate decision costs at runtime
+
+The substrate writes its decisions into the user patch layer, and its emitter owns that file wholly — it regenerates rather than appends, because patch rows carry no conditional guard and stacking them would build a group twice. That contract is only affordable if re-applying a rewritten file touches the rows that changed and leaves the rest alone.
+
+Measured in [`experiments/lab-no-restart.ts`](experiments/lab-no-restart.ts) (21 assertions), against the real watcher wiring:
+
+| edit | cost |
+|---|---|
+| disable one row | that row disposes; nothing else disposes or re-applies |
+| clear the patch | only the disabled row comes back |
+| **rewrite the whole file** | unchanged rows are untouched |
+| change one row's config | that row disposes and re-applies; others do not |
+| write a malformed patch | the tree survives, and the next good patch still applies |
+
+The third row is why the experiment exists. If rewriting the file rebuilt the tree, every substrate decision would cost a full restart and nobody would run it interactively.
+
+### The browser is not told
+
+The dev channel `/plugins/events` carries two frame types, `graph` and `rebuilt`. A roster change produces neither:
+
+```
+PASS  the host does subscribe to graph changes — onGraphChanged fires
+PASS  the host is notified, and writes nothing to the channel
+PASS  a rebuilt frame still arrives on the same channel — the silence is real
+```
+
+The host writes `graph` exactly once, when a connection opens (`packages/client/hmr/src/index.ts:160`); its only ongoing subscription is `onRebuilt`. `onGraphChanged` *is* subscribed, but only to re-sync bundle watches (`:138`). The browser half ignores the frame outright:
+
+```js
+case 'graph':
+  // Connect-time snapshot, unused.
+  break
+```
+
+**So host-plane decisions are live and client-plane decisions need a page reload.**
+
+That is where a fourth upstream request sits, structurally like the `BootPluginRow.priority` one: the host already knows, it just does not forward. It is not the same size, though — acting on the frame needs roster reconciliation in the browser, which reaches into the loader's add/remove semantics. No prototype is offered here, because half a fix is not one.
+
+---
+
 ## Method
 
 [`pipeline/`](pipeline/) contains the scanner that produced `data/`.
