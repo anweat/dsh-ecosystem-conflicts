@@ -36,6 +36,38 @@ a pass means *the composition mounts*, never *these plugins work*.
 earlier hardcoded version missed `send_message`, and the full-corpus boot failed
 on exactly that name.
 
+### Why it takes a boot, and what that means for the substrate
+
+Reading the shipped set from a boot is right for *this harness*, which composes
+the file before anything runs. It is not what the substrate does in production,
+and two alternatives were measured rather than assumed.
+
+**A static catalog** is the designed answer, and one already exists —
+`data/baseline.json` carries `tools: [{ name, package }]`, generated from the
+harness checkout. Derived against this profile it gets 12 of the 15 right:
+six missing, three spurious. Two distinct causes:
+
+- a bundle row expands into packages the row list never names, so
+  `@deepseek-ai/dsh-agent-spine-demo` silently brings `tool-bash`, `tool-jobs`,
+  and `tool-skill` — deterministic, and fixable in the generator
+- some tools register behind config (`read_image`, `list_agents`, `report`
+  never appeared), which is undecidable in general, the same class as the 37%
+  of routes whose path is not a literal
+
+**Reading the live registry in-process** does not work at plugin-apply time. A
+probe appended as the last row still sees zero tools when it applies: Cordis
+orders activation by service availability, so a plugin injecting `tools`
+activates as soon as `agent-spine` provides the service, which is before the
+tool packages have registered into it. After boot completes the same read
+returns all 15.
+
+That splits the two substrate modes rather than blocking either. Preset-host
+acts at agent setup, after boot, where the registry is already complete and no
+catalog is needed. Gatekeeper has to answer before boot by construction, so it
+depends on the catalog — and the catalog needs the bundle fix plus a
+"may register more" state for config-gated tools, so an unknown stays unknown
+instead of being read as a free name.
+
 ## Result, full corpus
 
 ```
