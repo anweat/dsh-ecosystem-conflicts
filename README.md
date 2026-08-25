@@ -8,6 +8,8 @@ Everything here is derived from public repositories and from the harness's own s
 
 ---
 
+> The substrate these measurements motivated, with its experiments and the end-to-end install, lives at **[anweat/dsh-substrate](https://github.com/anweat/dsh-substrate)**. This repository is the data.
+
 ## Headline findings
 
 **9,873 real plugins** identified out of 12,630 harvested repositories (a repository counts as a real plugin when it declares `package.json#dsh`, ships a `cordis.patch.yml`, or contains actual registration calls).
